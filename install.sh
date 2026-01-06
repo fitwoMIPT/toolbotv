@@ -20,7 +20,7 @@ read_input_yn() {
 }
 
 REPO_URL="https://github.com/fitwoMIPT/toolbotv.git"
-PROJECT_DIR="vless-shopbo"
+PROJECT_DIR="toolbotv"
 NGINX_CONF_FILE="/etc/nginx/sites-available/${PROJECT_DIR}.conf"
 
 echo -e "${GREEN}--- Запуск скрипта установки/обновления VLESS Shop Bot ---${NC}"
