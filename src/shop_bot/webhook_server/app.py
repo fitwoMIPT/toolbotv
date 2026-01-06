@@ -58,8 +58,8 @@ def create_webhook_app(bot_controller_instance):
     
     flask_app = Flask(
         __name__,
-        template_folder='templates',
-        static_folder='static'
+        template_folder=os.path.join(app_dir, 'templates'),
+        static_folder=os.path.join(app_dir, 'static')
     )
     
     flask_app.config['SECRET_KEY'] = 'lolkek4eburek'
