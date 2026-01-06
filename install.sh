@@ -118,7 +118,6 @@ if command -v ufw &> /dev/null && sudo ufw status | grep -q 'Status: active'; th
     sudo ufw allow 80/tcp
     sudo ufw allow 443/tcp
     sudo ufw allow 1488/tcp
-    sudo ufw allow 1489/tcp
     sudo ufw allow 8443/tcp
 fi
 
@@ -150,7 +149,7 @@ server {
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {
-        proxy_pass http://127.0.0.1:1489;
+        proxy_pass http://127.0.0.1:1488;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
