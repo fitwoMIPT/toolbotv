@@ -214,3 +214,23 @@ def get_main_menu_button() -> InlineKeyboardButton:
 def get_buy_button() -> InlineKeyboardButton:
     return InlineKeyboardButton(text="💳 Купить подписку", callback_data="buy_vpn")
 
+def create_referral_keyboard(balance: float) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if balance >= 20:
+        builder.button(text="🔄 Обменять баланс на дни VPN", callback_data="convert_balance")
+    builder.button(text="⬅️ Назад", callback_data="back_to_main_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_key_selection_for_conversion(keys: list) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for i, key in enumerate(keys):
+        expiry_date = datetime.fromisoformat(key['expiry_date'])
+        status_icon = "✅" if expiry_date > datetime.now() else "❌"
+        host_name = key.get('host_name', 'Неизвестный хост')
+        button_text = f"{status_icon} Ключ #{i+1} ({host_name}) (до {expiry_date.strftime('%d.%m.%Y')})"
+        builder.button(text=button_text, callback_data=f"convert_to_key_{key['key_id']}")
+    builder.button(text="⬅️ Назад", callback_data="show_referral_program")
+    builder.adjust(1)
+    return builder.as_markup()
+

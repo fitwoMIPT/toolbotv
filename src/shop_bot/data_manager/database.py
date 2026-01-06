@@ -824,3 +824,29 @@ def delete_user_keys(user_id: int):
             conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to delete keys for user {user_id}: {e}")
+
+def convert_referral_balance_to_days(user_id: int, amount: float, key_id: int, days: int):
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            # Check current balance
+            cursor.execute("SELECT referral_balance FROM users WHERE telegram_id = ?", (user_id,))
+            result = cursor.fetchone()
+            if not result or result[0] < amount:
+                return False, "Insufficient balance"
+
+            # Deduct balance
+            cursor.execute("UPDATE users SET referral_balance = referral_balance - ? WHERE telegram_id = ?", (amount, user_id))
+
+            # Get key details
+            cursor.execute("SELECT host_name, key_email FROM vpn_keys WHERE key_id = ? AND user_id = ?", (key_id, user_id))
+            key_result = cursor.fetchone()
+            if not key_result:
+                return False, "Key not found"
+
+            host_name, key_email = key_result
+            conn.commit()
+            return True, {"host_name": host_name, "key_email": key_email}
+    except sqlite3.Error as e:
+        logging.error(f"Failed to convert balance for user {user_id}: {e}")
+        return False, str(e)

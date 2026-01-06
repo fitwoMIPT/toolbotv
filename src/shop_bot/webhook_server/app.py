@@ -20,7 +20,8 @@ from shop_bot.data_manager.database import (
     create_host, delete_host, create_plan, delete_plan, get_user_count,
     get_total_keys_count, get_total_spent_sum, get_daily_stats_for_charts,
     get_recent_transactions, get_paginated_transactions, get_all_users, get_user_keys,
-    ban_user, unban_user, delete_user_keys, get_setting, find_and_complete_ton_transaction
+    ban_user, unban_user, delete_user_keys, get_setting, find_and_complete_ton_transaction,
+    convert_referral_balance_to_days, get_user
 )
 
 _bot_controller = None
@@ -411,5 +412,31 @@ def create_webhook_app(bot_controller_instance):
         except Exception as e:
             logger.error(f"Error in ton webhook handler: {e}", exc_info=True)
             return 'Error', 500
+
+    @flask_app.route('/convert-balance', methods=['POST'])
+    @login_required
+    def convert_balance_api():
+        try:
+            data = request.json
+            user_id = int(data.get('user_id'))
+            key_id = int(data.get('key_id'))
+            amount = float(data.get('amount'))
+
+            if amount < 20 or amount % 20 != 0:
+                return {'error': 'Amount must be multiple of 20 and at least 20'}, 400
+
+            days = int(amount / 20 * 10)
+
+            success, result = convert_referral_balance_to_days(user_id, amount, key_id, days)
+            if not success:
+                return {'error': result}, 400
+
+            # Note: This API endpoint deducts balance but does not extend the key on the host.
+            # Extension should be handled separately or by calling the bot logic.
+
+            return {'success': True, 'message': f'Converted {amount} RUB to {days} days for key {key_id}'}, 200
+        except Exception as e:
+            logger.error(f"Error in convert balance API: {e}")
+            return {'error': 'Internal server error'}, 500
 
     return flask_app

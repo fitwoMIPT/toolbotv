@@ -39,7 +39,7 @@ from shop_bot.data_manager.database import (
     update_key_info, set_trial_used, set_terms_agreed, get_setting, get_all_hosts,
     get_plans_for_host, get_plan_by_id, log_transaction, get_referral_count,
     add_to_referral_balance, create_pending_transaction, get_all_users,
-    set_referral_balance, set_referral_balance_all
+    set_referral_balance, set_referral_balance_all, convert_referral_balance_to_days
 )
 
 from shop_bot.config import (
@@ -423,7 +423,7 @@ def get_user_router() -> Router:
         user_id = callback.from_user.id
         user_data = get_user(user_id)
         bot_username = (await callback.bot.get_me()).username
-        
+
         referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
         referral_count = get_referral_count(user_id)
         balance = user_data.get('referral_balance', 0)
@@ -433,16 +433,92 @@ def get_user_router() -> Router:
             "Приглашайте друзей и получайте вознаграждение с <b>каждой</b> их покупки!\n\n"
             f"<b>Ваша реферальная ссылка:</b>\n<code>{referral_link}</code>\n\n"
             f"<b>Приглашено пользователей:</b> {referral_count}\n"
-            f"<b>Ваш баланс:</b> {balance:.2f} RUB"
+            f"<b>Ваш баланс:</b> {balance:.2f} RUB\n\n"
+            "💡 <i>За каждого приглашенного пользователя вы можете обменять 20₽ на 10 бесплатных дней VPN.</i>"
         )
 
-        builder = InlineKeyboardBuilder()
-        if balance >= 100:
-            builder.button(text="💸 Оставить заявку на вывод", callback_data="withdraw_request")
-        builder.button(text="⬅️ Назад", callback_data="back_to_main_menu")
+        keyboard = keyboards.create_referral_keyboard(balance)
         await callback.message.edit_text(
-            text, reply_markup=builder.as_markup()
+            text, reply_markup=keyboard
         )
+
+    @user_router.callback_query(F.data == "convert_balance")
+    @registration_required
+    async def convert_balance_handler(callback: types.CallbackQuery):
+        await callback.answer()
+        user_id = callback.from_user.id
+        user_keys = get_user_keys(user_id)
+        if not user_keys:
+            await callback.message.edit_text(
+                "❌ У вас нет активных ключей VPN. Сначала купите или получите пробный ключ.",
+                reply_markup=keyboards.create_referral_keyboard(get_user(user_id).get('referral_balance', 0))
+            )
+            return
+
+        await callback.message.edit_text(
+            "Выберите ключ, к которому добавить дни:",
+            reply_markup=keyboards.create_key_selection_for_conversion(user_keys)
+        )
+
+    @user_router.callback_query(F.data.startswith("convert_to_key_"))
+    @registration_required
+    async def convert_to_key_handler(callback: types.CallbackQuery):
+        await callback.answer()
+        user_id = callback.from_user.id
+        key_id = int(callback.data.split("_")[3])
+        user_data = get_user(user_id)
+        balance = user_data.get('referral_balance', 0)
+
+        if balance < 20:
+            await callback.message.edit_text(
+                "❌ Недостаточно баланса для конвертации.",
+                reply_markup=keyboards.create_referral_keyboard(balance)
+            )
+            return
+
+        # Calculate how many 20 RUB can be converted
+        max_conversions = int(balance // 20)
+        days_to_add = max_conversions * 10
+        amount_to_deduct = max_conversions * 20
+
+        success, result = convert_referral_balance_to_days(user_id, amount_to_deduct, key_id, days_to_add)
+        if not success:
+            await callback.message.edit_text(
+                f"❌ Ошибка конвертации: {result}",
+                reply_markup=keyboards.create_referral_keyboard(balance)
+            )
+            return
+
+        # Now extend the key on the host
+        try:
+            extend_result = await xui_api.create_or_update_key_on_host(
+                host_name=result['host_name'],
+                email=result['key_email'],
+                days_to_add=days_to_add
+            )
+            if not extend_result:
+                await callback.message.edit_text(
+                    "❌ Не удалось продлить ключ на сервере.",
+                    reply_markup=keyboards.create_referral_keyboard(get_user(user_id).get('referral_balance', 0))
+                )
+                return
+
+            update_key_info(key_id, extend_result['client_uuid'], extend_result['expiry_timestamp_ms'])
+
+            new_expiry_date = datetime.fromtimestamp(extend_result['expiry_timestamp_ms'] / 1000)
+            await callback.message.edit_text(
+                f"✅ Конвертация успешна!\n\n"
+                f"💰 Списано: {amount_to_deduct:.2f} RUB\n"
+                f"⏰ Добавлено дней: {days_to_add}\n"
+                f"📅 Новый срок действия: {new_expiry_date.strftime('%d.%m.%Y %H:%M')}",
+                reply_markup=keyboards.create_referral_keyboard(get_user(user_id).get('referral_balance', 0))
+            )
+        except Exception as e:
+            logger.error(f"Error extending key {key_id}: {e}")
+            await callback.message.edit_text(
+                "❌ Ошибка при продлении ключа.",
+                reply_markup=keyboards.create_referral_keyboard(get_user(user_id).get('referral_balance', 0))
+            )
 
     @user_router.callback_query(F.data == "withdraw_request")
     @registration_required
