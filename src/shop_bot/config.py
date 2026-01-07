@@ -37,3 +37,17 @@ def get_purchase_success_text(action: str, key_number: int, expiry_date, connect
         f"⏳ <b>Он будет действовать до:</b> {expiry_formatted}\n\n"
         f"<code>{connection_string}</code>"
     )
+
+from cryptography.fernet import Fernet
+
+def encrypt_user_id(user_id: int, key: str) -> str:
+    f = Fernet(key.encode())
+    return f.encrypt(str(user_id).encode()).decode()
+
+def decrypt_user_id(encrypted: str, key: str) -> int | None:
+    try:
+        f = Fernet(key.encode())
+        decrypted = f.decrypt(encrypted.encode()).decode()
+        return int(decrypted)
+    except Exception:
+        return None

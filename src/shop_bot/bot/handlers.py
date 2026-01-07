@@ -42,6 +42,8 @@ from shop_bot.data_manager.database import (
     set_referral_balance, set_referral_balance_all, convert_referral_balance_to_days
 )
 
+from shop_bot.config import encrypt_user_id, decrypt_user_id
+
 from shop_bot.config import (
     get_profile_text, get_vpn_active_text, VPN_INACTIVE_TEXT, VPN_NO_DATA_TEXT,
     get_key_info_text, CHOOSE_PAYMENT_METHOD_MESSAGE, get_purchase_success_text
@@ -124,10 +126,17 @@ def get_user_router() -> Router:
         username = message.from_user.username or message.from_user.full_name
         referrer_id = None
 
+        key = get_setting("referral_encryption_key")
+        if not key:
+            from cryptography.fernet import Fernet
+            key = Fernet.generate_key().decode()
+            update_setting("referral_encryption_key", key)
+
         if command.args and command.args.startswith('ref_'):
             try:
-                potential_referrer_id = int(command.args.split('_')[1])
-                if potential_referrer_id != user_id:
+                encrypted = command.args.split('_')[1]
+                potential_referrer_id = decrypt_user_id(encrypted, key)
+                if potential_referrer_id and potential_referrer_id != user_id:
                     referrer_id = potential_referrer_id
                     logger.info(f"New user {user_id} was referred by {referrer_id}")
             except (IndexError, ValueError):

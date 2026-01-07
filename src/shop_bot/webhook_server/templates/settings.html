@@ -275,6 +275,11 @@
 				        value="{{ settings.referral_link_template or '' }}"
 				    />
 				</div>
+				<div class="form-group password-wrapper">
+				    <label for="referral_encryption_key">Ключ шифрования рефералов:</label>
+				    <input type="password" id="referral_encryption_key" name="referral_encryption_key" value="{{ settings.referral_encryption_key or '' }}" />
+				    <button type="button" class="toggle-password">👁️</button>
+				</div>
 </section>
 			<section class="settings-section">
 				<h2>Настройки Пробного периода</h2>
