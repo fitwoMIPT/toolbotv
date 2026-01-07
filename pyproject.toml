@@ -13,7 +13,8 @@ dependencies = [
     "aiosend==2.1.2",
     "aiohttp==3.9.5",
     "aiohttp-sse-client==0.2.1",
-    "pytonconnect==0.3.2"
+    "pytonconnect==0.3.2",
+    "cryptography==42.0.5"
 ]
 
 [project.optional-dependencies]
