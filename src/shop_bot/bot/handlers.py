@@ -132,11 +132,10 @@ def get_user_router() -> Router:
             key = Fernet.generate_key().decode()
             update_setting("referral_encryption_key", key)
 
-        if command.args and command.args.startswith('ref_'):
+        if command.args:
             try:
-                encrypted = command.args.split('_')[1]
                 logger.info(f"Processing referral code: {command.args}")
-                potential_referrer_id = decrypt_user_id(encrypted, key)
+                potential_referrer_id = decrypt_user_id(command.args, key)
                 logger.info(f"Decrypted referrer ID: {potential_referrer_id}")
                 if potential_referrer_id and potential_referrer_id != user_id:
                     referrer_id = potential_referrer_id
@@ -145,7 +144,7 @@ def get_user_router() -> Router:
                     logger.info(f"User {user_id} clicked their own referral link - ignoring")
                 else:
                     logger.warning(f"Failed to decrypt referral code for user {user_id}")
-            except (IndexError, ValueError) as e:
+            except (ValueError) as e:
                 logger.warning(f"Invalid referral code format: {command.args}, error: {e}")
                 
         register_user_if_not_exists(user_id, username, referrer_id)
@@ -449,22 +448,7 @@ def get_user_router() -> Router:
         # Encrypt user ID for secure referral tracking
         encrypted_user_id = encrypt_user_id(user_id, encryption_key)
 
-        # Use referral link template from settings, or fall back to template format
-        referral_link_template = get_setting("referral_link_template")
-        if referral_link_template:
-            # Update old template to new format
-            if referral_link_template == "https://t.me/{bot_username}?start=ref_{user_id}":
-                referral_link_template = "https://{domain}/referral/{user_id}"
-                update_setting("referral_link_template", referral_link_template)
-            # Replace placeholders with actual values
-            domain = get_setting("domain")
-            referral_link = referral_link_template.format(
-                domain=domain,
-                user_id=encrypted_user_id
-            )
-        else:
-            # Default template
-            referral_link = f"https://t.me/{bot_username}?start=ref_{encrypted_user_id}"
+        referral_link = f"https://t.me/{bot_username}?start={encrypted_user_id}"
         referral_count = get_referral_count(user_id)
         balance = user_data.get('referral_balance', 0)
 

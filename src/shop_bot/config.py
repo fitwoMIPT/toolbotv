@@ -45,20 +45,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 def encrypt_user_id(user_id: int, key: str) -> str:
-    f = Fernet(key.encode())
-    encrypted = f.encrypt(str(user_id).encode()).decode()
+    import base64
+    encrypted = base64.b64encode(str(user_id).encode()).decode()
     # Remove Base64 padding (=) for cleaner URL
     return encrypted.rstrip('=')
 
 def decrypt_user_id(encrypted: str, key: str) -> int | None:
     try:
-        # Fernet uses URL-safe Base64 which always ends with = or == for padding
-        # Since we strip = during encryption, we need to add it back for decryption
-        # Calculate how many = chars are needed (0, 1, or 2)
+        import base64
+        # Add back padding
         padding_needed = (4 - len(encrypted) % 4) % 4
         padded = encrypted + ('=' * padding_needed)
-        f = Fernet(key.encode())
-        decrypted = f.decrypt(padded.encode()).decode()
+        decrypted = base64.b64decode(padded).decode()
         return int(decrypted)
     except Exception as e:
         logger.warning(f"Failed to decrypt referral code '{encrypted}': {e}")

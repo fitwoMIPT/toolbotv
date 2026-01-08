@@ -117,7 +117,7 @@ def initialize_db():
                 "windows_url": "https://telegra.ph/Instrukciya-Windows-11-09",
                 "ios_url": "https://telegra.ph/Instrukcii-ios-11-09",
                 "linux_url": "https://telegra.ph/Instrukciya-Linux-11-09",
-                "referral_link_template": "https://{domain}/referral/{user_id}",
+                "referral_link_template": "https://t.me/{bot_username}?start={user_id}",
                 "referral_encryption_key": None,
             }
             run_migration()
