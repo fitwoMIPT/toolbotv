@@ -453,8 +453,9 @@ def get_user_router() -> Router:
         referral_link_template = get_setting("referral_link_template")
         if referral_link_template:
             # Replace placeholders with actual values
+            domain = get_setting("domain")
             referral_link = referral_link_template.format(
-                bot_username=bot_username,
+                domain=domain,
                 user_id=encrypted_user_id
             )
         else:

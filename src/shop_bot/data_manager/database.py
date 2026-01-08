@@ -117,7 +117,7 @@ def initialize_db():
                 "windows_url": "https://telegra.ph/Instrukciya-Windows-11-09",
                 "ios_url": "https://telegra.ph/Instrukcii-ios-11-09",
                 "linux_url": "https://telegra.ph/Instrukciya-Linux-11-09",
-                "referral_link_template": "https://t.me/{bot_username}?start=ref_{user_id}",
+                "referral_link_template": "https://{domain}/referral/{user_id}",
                 "referral_encryption_key": None,
             }
             run_migration()
@@ -358,14 +358,22 @@ def register_user_if_not_exists(telegram_id: int, username: str, referrer_id):
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT telegram_id FROM users WHERE telegram_id = ?", (telegram_id,))
-            if not cursor.fetchone():
+            cursor.execute("SELECT telegram_id, referred_by FROM users WHERE telegram_id = ?", (telegram_id,))
+            existing_user = cursor.fetchone()
+            if not existing_user:
                 cursor.execute(
                     "INSERT INTO users (telegram_id, username, registration_date, referred_by) VALUES (?, ?, ?, ?)",
                     (telegram_id, username, datetime.now(), referrer_id)
                 )
             else:
-                cursor.execute("UPDATE users SET username = ? WHERE telegram_id = ?", (username, telegram_id))
+                update_fields = ["username = ?"]
+                update_values = [username]
+                if referrer_id and existing_user[1] is None:
+                    update_fields.append("referred_by = ?")
+                    update_values.append(referrer_id)
+                if update_fields:
+                    update_values.append(telegram_id)
+                    cursor.execute(f"UPDATE users SET {', '.join(update_fields)} WHERE telegram_id = ?", update_values)
             conn.commit()
     except sqlite3.Error as e:
         logging.error(f"Failed to register user {telegram_id}: {e}")

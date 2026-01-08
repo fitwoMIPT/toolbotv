@@ -413,6 +413,14 @@ def create_webhook_app(bot_controller_instance):
             logger.error(f"Error in ton webhook handler: {e}", exc_info=True)
             return 'Error', 500
 
+    @flask_app.route('/referral/<encrypted_user_id>')
+    def referral_page(encrypted_user_id):
+        bot_username = get_setting("telegram_bot_username")
+        if not bot_username:
+            return "Bot username not set", 500
+        referral_start_link = f"https://t.me/{bot_username}?start=ref_{encrypted_user_id}"
+        return render_template('referral.html', referral_start_link=referral_start_link)
+
     @flask_app.route('/convert-balance', methods=['POST'])
     @login_required
     def convert_balance_api():
