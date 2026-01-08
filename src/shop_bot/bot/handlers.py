@@ -452,6 +452,10 @@ def get_user_router() -> Router:
         # Use referral link template from settings, or fall back to template format
         referral_link_template = get_setting("referral_link_template")
         if referral_link_template:
+            # Update old template to new format
+            if referral_link_template == "https://t.me/{bot_username}?start=ref_{user_id}":
+                referral_link_template = "https://{domain}/referral/{user_id}"
+                update_setting("referral_link_template", referral_link_template)
             # Replace placeholders with actual values
             domain = get_setting("domain")
             referral_link = referral_link_template.format(
