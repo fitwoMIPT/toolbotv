@@ -135,12 +135,18 @@ def get_user_router() -> Router:
         if command.args and command.args.startswith('ref_'):
             try:
                 encrypted = command.args.split('_')[1]
+                logger.info(f"Processing referral code: {command.args}")
                 potential_referrer_id = decrypt_user_id(encrypted, key)
+                logger.info(f"Decrypted referrer ID: {potential_referrer_id}")
                 if potential_referrer_id and potential_referrer_id != user_id:
                     referrer_id = potential_referrer_id
                     logger.info(f"New user {user_id} was referred by {referrer_id}")
-            except (IndexError, ValueError):
-                logger.warning(f"Invalid referral code received: {command.args}")
+                elif potential_referrer_id == user_id:
+                    logger.info(f"User {user_id} clicked their own referral link - ignoring")
+                else:
+                    logger.warning(f"Failed to decrypt referral code for user {user_id}")
+            except (IndexError, ValueError) as e:
+                logger.warning(f"Invalid referral code format: {command.args}, error: {e}")
                 
         register_user_if_not_exists(user_id, username, referrer_id)
         user_id = message.from_user.id
@@ -433,7 +439,7 @@ def get_user_router() -> Router:
         user_data = get_user(user_id)
         bot_username = (await callback.bot.get_me()).username
 
-        # Get or create encryption key
+        # Get or create encryption key - ensure consistency
         encryption_key = get_setting("referral_encryption_key")
         if not encryption_key:
             from cryptography.fernet import Fernet
@@ -443,8 +449,17 @@ def get_user_router() -> Router:
         # Encrypt user ID for secure referral tracking
         encrypted_user_id = encrypt_user_id(user_id, encryption_key)
 
-        # Always use encrypted ID for secure referral tracking
-        referral_link = f"https://t.me/{bot_username}?start=ref_{encrypted_user_id}"
+        # Use referral link template from settings, or fall back to template format
+        referral_link_template = get_setting("referral_link_template")
+        if referral_link_template:
+            # Replace placeholders with actual values
+            referral_link = referral_link_template.format(
+                bot_username=bot_username,
+                user_id=encrypted_user_id
+            )
+        else:
+            # Default template
+            referral_link = f"https://t.me/{bot_username}?start=ref_{encrypted_user_id}"
         referral_count = get_referral_count(user_id)
         balance = user_data.get('referral_balance', 0)
 
