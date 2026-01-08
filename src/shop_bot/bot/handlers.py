@@ -160,6 +160,19 @@ def get_user_router() -> Router:
             await show_main_menu(message)
             return
 
+        if referrer_id:
+            # For referred users, show bot description with free trial button
+            text = (
+                "🤖 <b>Что умеет этот бот?</b>\n\n"
+                "Этот бот позволяет приобрести VPN ключи для безопасного и анонимного доступа к интернету. "
+                "Вы можете купить ключи на разные сроки или воспользоваться бесплатным пробным периодом на 15 дней.\n\n"
+                "Выберите действие:"
+            )
+            keyboard = InlineKeyboardBuilder()
+            keyboard.button(text="🎁 Попробовать бесплатно 15 дней", callback_data="get_trial")
+            await message.answer(text, reply_markup=keyboard.as_markup())
+            return
+
         terms_url = get_setting("terms_url")
         privacy_url = get_setting("privacy_url")
         channel_url = get_setting("channel_url")
@@ -170,7 +183,7 @@ def get_user_router() -> Router:
             return
 
         is_subscription_forced = get_setting("force_subscription") == "true"
-        
+
         show_welcome_screen = (is_subscription_forced and channel_url) or (terms_url and privacy_url)
 
         if not show_welcome_screen:
@@ -179,10 +192,10 @@ def get_user_router() -> Router:
             return
 
         welcome_parts = ["<b>Добро пожаловать!</b>\n"]
-        
+
         if is_subscription_forced and channel_url:
             welcome_parts.append("Для доступа ко всем функциям, пожалуйста, подпишитесь на наш канал.\n")
-        
+
         if terms_url:
             welcome_parts.append("Также необходимо ознакомиться и принять наши Условия использования.")
         elif privacy_url:
@@ -192,7 +205,7 @@ def get_user_router() -> Router:
 
         welcome_parts.append("\nПосле этого нажмите кнопку ниже.")
         final_text = "\n".join(welcome_parts)
-        
+
         await message.answer(
             final_text,
             reply_markup=keyboards.create_welcome_keyboard(
@@ -715,7 +728,8 @@ def get_user_router() -> Router:
                 return
 
             set_trial_used(user_id)
-            
+            set_terms_agreed(user_id)
+
             new_key_id = add_new_key(
                 user_id=user_id,
                 host_name=host_name,
@@ -723,7 +737,7 @@ def get_user_router() -> Router:
                 key_email=result['email'],
                 expiry_timestamp_ms=result['expiry_timestamp_ms']
             )
-            
+
             await message.delete()
             new_expiry_date = datetime.fromtimestamp(result['expiry_timestamp_ms'] / 1000)
             final_text = get_purchase_success_text("готов", get_next_key_number(user_id) -1, new_expiry_date, result['connection_string'])
