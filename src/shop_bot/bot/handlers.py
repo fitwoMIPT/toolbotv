@@ -444,7 +444,7 @@ def get_user_router() -> Router:
         encrypted_user_id = encrypt_user_id(user_id, encryption_key)
 
         referral_link_template = get_setting("referral_link_template") or "https://t.me/{bot_username}?start=ref_{encrypted_id}"
-        referral_link = referral_link_template.format(bot_username=bot_username, encrypted_id=encrypted_user_id)
+        referral_link = referral_link_template.format(bot_username=bot_username, user_id=user_id, encrypted_id=encrypted_user_id)
         referral_count = get_referral_count(user_id)
         balance = user_data.get('referral_balance', 0)
 
