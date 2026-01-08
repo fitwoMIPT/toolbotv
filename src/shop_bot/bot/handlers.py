@@ -161,15 +161,10 @@ def get_user_router() -> Router:
             return
 
         if referrer_id:
-            # For referred users, show bot description with free trial button
-            text = (
-                "🤖 <b>Что умеет этот бот?</b>\n\n"
-                "Этот бот позволяет приобрести VPN ключи для безопасного и анонимного доступа к интернету. "
-                "Вы можете купить ключи на разные сроки или воспользоваться бесплатным пробным периодом на 15 дней.\n\n"
-                "Выберите действие:"
-            )
+            # For referred users, show initial message with start button
+            text = "🤖 <b>Что умеет этот бот?</b>\n\nЭтот бот помогает приобрести VPN ключи для безопасного доступа к интернету."
             keyboard = InlineKeyboardBuilder()
-            keyboard.button(text="🎁 Попробовать бесплатно 15 дней", callback_data="get_trial")
+            keyboard.button(text="🚀 Start", callback_data="start_bot")
             await message.answer(text, reply_markup=keyboard.as_markup())
             return
 
@@ -260,6 +255,19 @@ def get_user_router() -> Router:
     async def back_to_main_menu_handler(callback: types.CallbackQuery):
         await callback.answer()
         await show_main_menu(callback.message, edit_message=True)
+
+    @user_router.callback_query(F.data == "start_bot")
+    async def start_bot_callback(callback: types.CallbackQuery):
+        await callback.answer()
+        text = (
+            "🤖 <b>Подробное описание</b>\n\n"
+            "Этот бот позволяет приобрести VPN ключи для безопасного и анонимного доступа к интернету. "
+            "Вы можете купить ключи на разные сроки или воспользоваться бесплатным пробным периодом на 15 дней.\n\n"
+            "Выберите действие:"
+        )
+        keyboard = InlineKeyboardBuilder()
+        keyboard.button(text="🎁 Попробовать бесплатно 15 дней", callback_data="get_trial")
+        await callback.message.edit_text(text, reply_markup=keyboard.as_markup())
 
     @user_router.callback_query(F.data == "show_profile")
     @registration_required
