@@ -36,7 +36,7 @@ from shop_bot.modules import xui_api
 from shop_bot.data_manager.database import (
     get_user, add_new_key, get_user_keys, update_user_stats,
     register_user_if_not_exists, get_next_key_number, get_key_by_id,
-    update_key_info, set_trial_used, set_terms_agreed, get_setting, get_all_hosts,
+    update_key_info, set_trial_used, set_terms_agreed, get_setting, update_setting, get_all_hosts,
     get_plans_for_host, get_plan_by_id, log_transaction, get_referral_count,
     add_to_referral_balance, create_pending_transaction, get_all_users,
     set_referral_balance, set_referral_balance_all, convert_referral_balance_to_days
