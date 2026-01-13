@@ -62,7 +62,10 @@ def create_webhook_app(bot_controller_instance):
         static_folder=os.path.join(app_dir, 'static')
     )
     
-    flask_app.config['SECRET_KEY'] = 'lolkek4eburek'
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        raise ValueError("SECRET_KEY environment variable is not set. Please set it for security.")
+    flask_app.config['SECRET_KEY'] = secret_key
 
     @flask_app.context_processor
     def inject_current_year():

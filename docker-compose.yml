@@ -7,3 +7,5 @@ services:
     volumes:
       - .:/app/project
       - /app/.venv
+    environment:
+      - SECRET_KEY=QB8RCf]yejc-LCZ8miN?g]$x+@+g1H
