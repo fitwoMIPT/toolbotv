@@ -9,7 +9,7 @@ import json
 import base64
 import asyncio
 
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from hmac import compare_digest
 from functools import wraps
 from yookassa import Payment
@@ -834,13 +834,13 @@ def get_user_router() -> Router:
             disable_web_page_preview=False
         )
 
-    @user_router.callback_query(F.data.startswith("import_v2rayng_"))
+    @user_router.callback_query(F.data.startswith("import_v2raytun_"))
     @registration_required
-    async def import_v2rayng_handler(callback: types.CallbackQuery):
+    async def import_v2raytun_handler(callback: types.CallbackQuery):
         await callback.answer()
         key_id = int(callback.data.split("_")[2])
         await callback.message.edit_text(
-            "Выберите вашу платформу для импорта в V2RayNG:",
+            "Выберите вашу платформу для импорта в V2RayTun:",
             reply_markup=keyboards.create_platform_selection_keyboard(key_id)
         )
 
@@ -863,18 +863,18 @@ def get_user_router() -> Router:
                 return
 
             connection_string = details['connection_string']
-            encoded_config = urlencode({'config': connection_string})
-            v2rayng_url = f"v2rayng://import-config?{encoded_config}"
+            encoded_config = quote(connection_string)
+            v2raytun_url = f"v2raytun://import/{encoded_config}"
 
             platform_name = "Android" if platform == "android" else "iOS"
             await callback.message.edit_text(
                 f"Платформа: {platform_name}\n\n"
-                "Нажмите кнопку ниже, чтобы импортировать конфигурацию в V2RayNG.\n\n"
-                "Если приложение не установлено, установите V2RayNG с Google Play (Android) или App Store (iOS).",
-                reply_markup=keyboards.create_v2rayng_import_keyboard(v2rayng_url, key_id)
+                "Нажмите кнопку ниже, чтобы импортировать конфигурацию в V2RayTun.\n\n"
+                "Если приложение не установлено, установите V2RayTun с Google Play (Android) или App Store (iOS).",
+                reply_markup=keyboards.create_v2raytun_import_keyboard(v2raytun_url, key_id)
             )
         except Exception as e:
-            logger.error(f"Error importing to V2RayNG for key {key_id}: {e}")
+            logger.error(f"Error importing to V2RayTun for key {key_id}: {e}")
             await callback.answer("❌ Ошибка при импорте.", show_alert=True)
     
     @user_router.callback_query(F.data.startswith("howto_vless"))

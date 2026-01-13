@@ -150,7 +150,7 @@ def create_key_info_keyboard(key_id: int) -> InlineKeyboardMarkup:
     builder.button(text="➕ Продлить этот ключ", callback_data=f"extend_key_{key_id}")
     builder.button(text="📱 Показать QR-код", callback_data=f"show_qr_{key_id}")
     builder.button(text="📖 Инструкция", callback_data=f"howto_vless_{key_id}")
-    builder.button(text="🚀 Импорт в V2RayNG", callback_data=f"import_v2rayng_{key_id}")
+    builder.button(text="🚀 Импорт в V2RayTun", callback_data=f"import_v2raytun_{key_id}")
     builder.button(text="⬅️ Назад к списку ключей", callback_data="manage_keys")
     builder.adjust(1)
     return builder.as_markup()
@@ -243,9 +243,9 @@ def create_platform_selection_keyboard(key_id: int) -> InlineKeyboardMarkup:
     builder.adjust(2, 1)
     return builder.as_markup()
 
-def create_v2rayng_import_keyboard(v2rayng_url: str, key_id: int) -> InlineKeyboardMarkup:
+def create_v2raytun_import_keyboard(v2raytun_url: str, key_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="🚀 Открыть V2RayNG", url=v2rayng_url)
+    builder.button(text="🚀 Открыть V2RayTun", url=v2raytun_url)
     builder.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
     builder.adjust(1)
     return builder.as_markup()
