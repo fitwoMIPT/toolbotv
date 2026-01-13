@@ -150,6 +150,7 @@ def create_key_info_keyboard(key_id: int) -> InlineKeyboardMarkup:
     builder.button(text="➕ Продлить этот ключ", callback_data=f"extend_key_{key_id}")
     builder.button(text="📱 Показать QR-код", callback_data=f"show_qr_{key_id}")
     builder.button(text="📖 Инструкция", callback_data=f"howto_vless_{key_id}")
+    builder.button(text="🚀 Импорт в V2RayNG", callback_data=f"import_v2rayng_{key_id}")
     builder.button(text="⬅️ Назад к списку ключей", callback_data="manage_keys")
     builder.adjust(1)
     return builder.as_markup()
@@ -231,6 +232,21 @@ def create_key_selection_for_conversion(keys: list) -> InlineKeyboardMarkup:
         button_text = f"{status_icon} Ключ #{i+1} ({host_name}) (до {expiry_date.strftime('%d.%m.%Y')})"
         builder.button(text=button_text, callback_data=f"convert_to_key_{key['key_id']}")
     builder.button(text="⬅️ Назад", callback_data="show_referral_program")
+    builder.adjust(1)
+    return builder.as_markup()
+
+def create_platform_selection_keyboard(key_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📱 Android", callback_data=f"select_platform_android_{key_id}")
+    builder.button(text="🍎 iOS", callback_data=f"select_platform_ios_{key_id}")
+    builder.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
+    builder.adjust(2, 1)
+    return builder.as_markup()
+
+def create_v2rayng_import_keyboard(v2rayng_url: str, key_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🚀 Открыть V2RayNG", url=v2rayng_url)
+    builder.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
     builder.adjust(1)
     return builder.as_markup()
 

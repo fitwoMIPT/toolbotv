@@ -833,6 +833,49 @@ def get_user_router() -> Router:
             key_id=key_id),
             disable_web_page_preview=False
         )
+
+    @user_router.callback_query(F.data.startswith("import_v2rayng_"))
+    @registration_required
+    async def import_v2rayng_handler(callback: types.CallbackQuery):
+        await callback.answer()
+        key_id = int(callback.data.split("_")[2])
+        await callback.message.edit_text(
+            "Выберите вашу платформу для импорта в V2RayNG:",
+            reply_markup=keyboards.create_platform_selection_keyboard(key_id)
+        )
+
+    @user_router.callback_query(F.data.startswith("select_platform_"))
+    @registration_required
+    async def select_platform_handler(callback: types.CallbackQuery):
+        await callback.answer()
+        parts = callback.data.split("_")
+        platform = parts[2]
+        key_id = int(parts[3])
+        key_data = get_key_by_id(key_id)
+        if not key_data or key_data['user_id'] != callback.from_user.id:
+            await callback.answer("❌ Ключ не найден.", show_alert=True)
+            return
+
+        try:
+            details = await xui_api.get_key_details_from_host(key_data)
+            if not details or not details['connection_string']:
+                await callback.answer("❌ Не удалось получить данные ключа.", show_alert=True)
+                return
+
+            connection_string = details['connection_string']
+            encoded_config = urlencode({'config': connection_string})
+            v2rayng_url = f"v2rayng://import-config?{encoded_config}"
+
+            platform_name = "Android" if platform == "android" else "iOS"
+            await callback.message.edit_text(
+                f"Платформа: {platform_name}\n\n"
+                "Нажмите кнопку ниже, чтобы импортировать конфигурацию в V2RayNG.\n\n"
+                "Если приложение не установлено, установите V2RayNG с Google Play (Android) или App Store (iOS).",
+                reply_markup=keyboards.create_v2rayng_import_keyboard(v2rayng_url, key_id)
+            )
+        except Exception as e:
+            logger.error(f"Error importing to V2RayNG for key {key_id}: {e}")
+            await callback.answer("❌ Ошибка при импорте.", show_alert=True)
     
     @user_router.callback_query(F.data.startswith("howto_vless"))
     @registration_required
