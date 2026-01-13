@@ -243,10 +243,8 @@ def create_platform_selection_keyboard(key_id: int) -> InlineKeyboardMarkup:
     builder.adjust(2, 1)
     return builder.as_markup()
 
-def create_v2raytun_import_keyboard(v2raytun_url: str, key_id: int) -> InlineKeyboardMarkup:
+def create_back_to_key_keyboard(key_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="🚀 Открыть V2RayTun", url=v2raytun_url)
     builder.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
-    builder.adjust(1)
     return builder.as_markup()
 

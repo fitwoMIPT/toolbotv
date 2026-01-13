@@ -866,13 +866,7 @@ def get_user_router() -> Router:
             encoded_config = quote(connection_string)
             v2raytun_url = f"v2raytun://import/{encoded_config}"
 
-            platform_name = "Android" if platform == "android" else "iOS"
-            await callback.message.edit_text(
-                f"Платформа: {platform_name}\n\n"
-                "Нажмите кнопку ниже, чтобы импортировать конфигурацию в V2RayTun.\n\n"
-                "Если приложение не установлено, установите V2RayTun с Google Play (Android) или App Store (iOS).",
-                reply_markup=keyboards.create_v2raytun_import_keyboard(v2raytun_url, key_id)
-            )
+            await callback.answer(url=v2raytun_url)
         except Exception as e:
             logger.error(f"Error importing to V2RayTun for key {key_id}: {e}")
             await callback.answer("❌ Ошибка при импорте.", show_alert=True)
