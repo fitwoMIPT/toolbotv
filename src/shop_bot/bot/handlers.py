@@ -862,11 +862,13 @@ def get_user_router() -> Router:
                 await callback.answer("❌ Не удалось получить данные ключа.", show_alert=True)
                 return
 
-            connection_string = details['connection_string']
-            encoded_config = quote(connection_string)
-            v2raytun_url = f"v2raytun://import/{encoded_config}"
+            domain = get_setting("domain")
+            if not domain:
+                await callback.answer("Domain not configured", show_alert=True)
+                return
 
-            await callback.answer(url=v2raytun_url)
+            import_url = f"https://{domain}/v2raytun-import/{key_id}/{platform}"
+            await callback.answer(url=import_url)
         except Exception as e:
             logger.error(f"Error importing to V2RayTun for key {key_id}: {e}")
             await callback.answer("❌ Ошибка при импорте.", show_alert=True)
