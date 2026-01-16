@@ -972,7 +972,13 @@ def get_user_router() -> Router:
             encoded_config = quote(connection_string)
             v2raytun_url = f"v2raytun://import/{encoded_config}"
             import_url = f"https://{domain}/v2raytun-import?deep={quote(v2raytun_url)}"
-            await callback.answer(url=import_url)
+            logger.info(f"V2RayTun import URL generated: {import_url}")
+            keyboard = InlineKeyboardBuilder()
+            keyboard.button(text=f"Импорт в V2RayTun ({platform})", url=import_url)
+            await callback.message.edit_text(
+                f"Нажмите кнопку ниже для импорта конфигурации в V2RayTun на платформе {platform}:",
+                reply_markup=keyboard.as_markup()
+            )
         except Exception as e:
             logger.error(f"Error importing to V2RayTun for key {key_id}: {e}")
             await callback.answer("❌ Ошибка при импорте.", show_alert=True)
