@@ -8,6 +8,7 @@ import hashlib
 import json
 import base64
 import asyncio
+import html as html_module
 
 from urllib.parse import urlencode, quote
 from hmac import compare_digest
@@ -656,7 +657,7 @@ def get_user_router() -> Router:
 
         text_message = args[2]
         # Escape text for safety, though not strictly necessary for plain text
-        safe_text = html.escape(text_message)
+        safe_text = html_module.escape(text_message)
 
         try:
             await bot.send_message(chat_id=telegram_id, text=safe_text)
