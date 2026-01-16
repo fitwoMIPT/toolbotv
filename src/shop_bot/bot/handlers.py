@@ -674,6 +674,68 @@ def get_user_router() -> Router:
         except Exception as e:
             await message.answer(f"Неизвестная ошибка: {str(e)}")
 
+    @user_router.message(Command(commands=["add"]))
+    async def add_days_handler(message: types.Message, bot: Bot):
+        user_id = message.from_user.id
+        admin_id_str = get_setting("admin_telegram_id")
+        if not admin_id_str or str(user_id) != admin_id_str:
+            await message.answer("У вас нет доступа к этой команде.")
+            return
+
+        args = message.text.split()
+        if len(args) != 3:
+            await message.answer("Использование: /add <telegram_id> <days_to_add>")
+            return
+
+        try:
+            telegram_id = int(args[1])
+        except ValueError:
+            await message.answer("Неверный формат telegram_id. Должен быть числом.")
+            return
+
+        try:
+            days_to_add = int(args[2])
+            if days_to_add <= 0:
+                await message.answer("Количество дней должно быть положительным числом.")
+                return
+        except ValueError:
+            await message.answer("Неверный формат days_to_add. Должен быть числом.")
+            return
+
+        user_data = get_user(telegram_id)
+        if not user_data:
+            await message.answer("Пользователь не найден.")
+            return
+
+        user_keys = get_user_keys(telegram_id)
+        now = datetime.now()
+        active_keys = [key for key in user_keys if datetime.fromisoformat(key['expiry_date']) > now]
+
+        if not active_keys:
+            await message.answer("У пользователя нет активных ключей.")
+            return
+
+        extended_count = 0
+        for key in active_keys:
+            try:
+                result = await xui_api.create_or_update_key_on_host(
+                    host_name=key['host_name'],
+                    email=key['key_email'],
+                    days_to_add=days_to_add
+                )
+                if result:
+                    update_key_info(key['key_id'], result['client_uuid'], result['expiry_timestamp_ms'])
+                    extended_count += 1
+                else:
+                    logger.warning(f"Failed to extend key {key['key_id']} for user {telegram_id}")
+            except Exception as e:
+                logger.error(f"Error extending key {key['key_id']}: {e}")
+
+        if extended_count > 0:
+            await message.answer(f"✅ Успешно добавлено {days_to_add} дней к {extended_count} активным ключам пользователя {telegram_id}.")
+        else:
+            await message.answer("Не удалось продлить ни один ключ. Проверьте логи.")
+
     @user_router.callback_query(F.data == "show_about")
     @registration_required
     async def about_handler(callback: types.CallbackQuery):
