@@ -450,4 +450,46 @@ def create_webhook_app(bot_controller_instance):
             logger.error(f"Error in convert balance API: {e}")
             return {'error': 'Internal server error'}, 500
 
+    @flask_app.route('/v2raytun-import/<int:key_id>/<platform>')
+    def v2raytun_import_page(key_id, platform):
+        from urllib.parse import quote
+        from shop_bot.data_manager.database import get_key_by_id
+        from shop_bot.modules import xui_api
+
+        key_data = get_key_by_id(key_id)
+        if not key_data:
+            return "Key not found", 404
+
+        try:
+            details = asyncio.run(xui_api.get_key_details_from_host(key_data))
+            if not details or not details['connection_string']:
+                return "Failed to get key details", 500
+
+            connection_string = details['connection_string']
+            encoded_config = quote(connection_string)
+            v2raytun_url = f"v2raytun://import/{encoded_config}"
+
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Importing to V2RayTun</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+            </head>
+            <body>
+                <h2>Импорт конфигурации в V2RayTun</h2>
+                <p>Платформа: {platform}</p>
+                <p>Если приложение V2RayTun установлено, оно откроется автоматически для импорта конфигурации.</p>
+                <p>Если ничего не произошло, установите V2RayTun из Google Play (Android) или App Store (iOS).</p>
+                <script>
+                    window.location = "{v2raytun_url}";
+                </script>
+            </body>
+            </html>
+            """
+            return html_content
+        except Exception as e:
+            logger.error(f"Error in v2raytun import page: {e}")
+            return "Error generating import link", 500
+
     return flask_app

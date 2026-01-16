@@ -51,7 +51,7 @@ from shop_bot.config import (
 
 TELEGRAM_BOT_USERNAME = None
 PAYMENT_METHODS = None
-ADMIN_ID = None
+ADMIN_ID = get_setting("admin_telegram_id")
 CRYPTO_BOT_TOKEN = get_setting("cryptobot_token")
 
 logger = logging.getLogger(__name__)
@@ -634,6 +634,44 @@ def get_user_router() -> Router:
             )
         except Exception as e:
             await message.answer(f"Ошибка: {e}")
+
+    @user_router.message(Command(commands=["send_message"]))
+    async def send_message_handler(message: types.Message, bot: Bot):
+        user_id = message.from_user.id
+        admin_id_str = get_setting("admin_telegram_id")
+        if not admin_id_str or str(user_id) != admin_id_str:
+            await message.answer("У вас нет доступа к этой команде.")
+            return
+
+        args = message.text.split(maxsplit=2)  # /send_message telegram_id text
+        if len(args) < 3:
+            await message.answer("Использование: /send_message <telegram_id> <text_message>")
+            return
+
+        try:
+            telegram_id = int(args[1])
+        except ValueError:
+            await message.answer("Неверный формат telegram_id. Должен быть числом.")
+            return
+
+        text_message = args[2]
+        # Escape text for safety, though not strictly necessary for plain text
+        safe_text = html.escape(text_message)
+
+        try:
+            await bot.send_message(chat_id=telegram_id, text=safe_text)
+            await message.answer(f"✅ Сообщение успешно отправлено пользователю {telegram_id}.")
+        except TelegramBadRequest as e:
+            error_msg = "Ошибка при отправке сообщения: "
+            if "chat not found" in str(e).lower() or "user not found" in str(e).lower():
+                error_msg += "Пользователь не найден или заблокировал бота."
+            elif "bot was blocked" in str(e).lower():
+                error_msg += "Пользователь заблокировал бота."
+            else:
+                error_msg += str(e)
+            await message.answer(error_msg)
+        except Exception as e:
+            await message.answer(f"Неизвестная ошибка: {str(e)}")
 
     @user_router.callback_query(F.data == "show_about")
     @registration_required
