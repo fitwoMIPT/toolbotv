@@ -13,7 +13,7 @@
   <body>
     <div class="container">
       <header class="main-header">
-        <nav class="navigation desktop-nav">
+        <nav class="navigation">
           <ul>
             <li>
               <a
@@ -38,35 +38,6 @@
             </li>
           </ul>
         </nav>
-        <div class="bm">
-          <input id="burger" type="checkbox" />
-          <label for="burger"><span></span><span></span><span></span></label>
-          <nav class="navigation mobile-nav">
-            <ul>
-              <li>
-                <a
-                  href="{{ url_for('dashboard_page') }}"
-                  class="nav-link {% if request.endpoint == 'dashboard_page' %}active{% endif %}"
-                  >Dashboard</a
-                >
-              </li>
-              <li>
-                <a
-                  href="{{ url_for('users_page') }}"
-                  class="nav-link {% if request.endpoint == 'users_page' %}active{% endif %}"
-                  >Пользователи</a
-                >
-              </li>
-              <li>
-                <a
-                  href="{{ url_for('settings_page') }}"
-                  class="nav-link {% if request.endpoint == 'settings_page' %}active{% endif %}"
-                  >Настройки</a
-                >
-              </li>
-            </ul>
-          </nav>
-        </div>
 
         <div class="header-controls">
           <div class="bot-control">
