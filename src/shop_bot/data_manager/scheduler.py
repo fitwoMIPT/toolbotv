@@ -194,14 +194,11 @@ async def periodic_subscription_check(bot_controller: BotController):
         try:
             await sync_keys_with_panels()
 
-            if bot_controller.get_status().get("is_running"):
-                bot = bot_controller.get_bot_instance()
-                if bot:
-                    await check_expiring_subscriptions(bot)
-                else:
-                    logger.warning("Scheduler: Bot is marked as running, but instance is not available.")
+            bot = bot_controller.get_bot_instance()
+            if bot:
+                await check_expiring_subscriptions(bot)
             else:
-                logger.info("Scheduler: Bot is stopped, skipping user notifications.")
+                logger.info("Scheduler: Bot instance is not available, skipping user notifications.")
 
         except Exception as e:
             logger.error(f"Scheduler: An unhandled error occurred in the main loop: {e}", exc_info=True)
