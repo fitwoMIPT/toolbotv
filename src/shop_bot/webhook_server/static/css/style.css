@@ -642,7 +642,7 @@ body.login-page {
   background-color: var(--success-color);
 }
 
-@media (max-width: 1256px) {
+@media (max-width: 768px) {
   .desktop-nav {
     display: none;
   }
