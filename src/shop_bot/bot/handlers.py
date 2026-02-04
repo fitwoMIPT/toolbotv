@@ -938,50 +938,57 @@ def get_user_router() -> Router:
     @user_router.callback_query(F.data.startswith("import_v2raytun_"))
     @registration_required
     async def import_v2raytun_handler(callback: types.CallbackQuery):
-        await callback.answer()
         key_id = int(callback.data.split("_")[2])
-        await callback.message.edit_text(
-            "Выберите вашу платформу для импорта в V2RayTun:",
-            reply_markup=keyboards.create_platform_selection_keyboard(key_id)
-        )
-
-    @user_router.callback_query(F.data.startswith("select_platform_"))
-    @registration_required
-    async def select_platform_handler(callback: types.CallbackQuery):
-        await callback.answer()
-        parts = callback.data.split("_")
-        platform = parts[2]
-        key_id = int(parts[3])
         key_data = get_key_by_id(key_id)
+        
         if not key_data or key_data['user_id'] != callback.from_user.id:
             await callback.answer("❌ Ключ не найден.", show_alert=True)
             return
 
         try:
+            await callback.answer("Подготавливаю ссылку для импорта...")
+            
             details = await xui_api.get_key_details_from_host(key_data)
             if not details or not details['connection_string']:
-                await callback.answer("❌ Не удалось получить данные ключа.", show_alert=True)
+                await callback.message.edit_text(
+                    "❌ Не удалось получить данные ключа. Попробуйте позже.",
+                    reply_markup=keyboards.create_back_to_key_keyboard(key_id)
+                )
                 return
 
             domain = get_setting("domain")
             if not domain:
-                await callback.answer("Domain not configured", show_alert=True)
+                await callback.message.edit_text(
+                    "❌ Домен не настроен. Обратитесь к администратору.",
+                    reply_markup=keyboards.create_back_to_key_keyboard(key_id)
+                )
                 return
 
             connection_string = details['connection_string']
-            encoded_config = quote(connection_string)
-            v2raytun_url = f"v2raytun://import/{encoded_config}"
-            import_url = f"https://{domain}/v2raytun-import?deep={quote(v2raytun_url)}"
-            logger.info(f"V2RayTun import URL generated: {import_url}")
+            # URL-encode the config for safe transmission in URL parameter
+            encoded_config = quote(connection_string, safe='')
+            import_url = f"https://{domain}/v2raytun-import?config={encoded_config}"
+            
+            logger.info(f"V2RayTun import URL generated for key {key_id}")
+            
             keyboard = InlineKeyboardBuilder()
-            keyboard.button(text=f"Импорт в V2RayTun ({platform})", url=import_url)
+            keyboard.button(text="📱 Открыть и импортировать", url=import_url)
+            keyboard.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
+            keyboard.adjust(1)
+            
             await callback.message.edit_text(
-                f"Нажмите кнопку ниже для импорта конфигурации в V2RayTun на платформе {platform}:",
+                "🚀 <b>Импорт в V2RayTun</b>\n\n"
+                "Нажмите кнопку ниже, чтобы открыть страницу импорта.\n"
+                "Конфигурация будет автоматически импортирована в приложение V2RayTun.\n\n"
+                "💡 <i>Убедитесь, что приложение V2RayTun установлено на вашем устройстве.</i>",
                 reply_markup=keyboard.as_markup()
             )
         except Exception as e:
-            logger.error(f"Error importing to V2RayTun for key {key_id}: {e}")
-            await callback.answer("❌ Ошибка при импорте.", show_alert=True)
+            logger.error(f"Error preparing V2RayTun import for key {key_id}: {e}", exc_info=True)
+            await callback.message.edit_text(
+                "❌ Произошла ошибка при подготовке импорта.",
+                reply_markup=keyboards.create_back_to_key_keyboard(key_id)
+            )
     
     @user_router.callback_query(F.data.startswith("howto_vless"))
     @registration_required

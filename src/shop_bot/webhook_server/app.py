@@ -452,9 +452,11 @@ def create_webhook_app(bot_controller_instance):
 
     @flask_app.route('/v2raytun-import')
     def v2raytun_import_page():
-        deep = request.args.get('deep')
-        if not deep:
-            return "Missing deep parameter", 400
-        return redirect(deep, code=302)
+        config = request.args.get('config')
+        if not config:
+            return "Missing config parameter", 400
+        
+        bot_username = get_setting("telegram_bot_username") or ""
+        return render_template('v2raytun_import.html', config=config, bot_username=bot_username)
 
     return flask_app
