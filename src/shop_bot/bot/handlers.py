@@ -946,7 +946,7 @@ def get_user_router() -> Router:
             return
 
         try:
-            await callback.answer("Подготавливаю ссылку для импорта...")
+            await callback.answer("Подготавливаю данные для импорта...")
             
             details = await xui_api.get_key_details_from_host(key_data)
             if not details or not details['connection_string']:
@@ -958,25 +958,33 @@ def get_user_router() -> Router:
 
             connection_string = details['connection_string']
             
-            # Формируем direct deep link для V2RayTun
-            # Формат: v2raytun://import/{configuration}
-            v2raytun_url = f"v2raytun://import/{connection_string}"
-            
-            logger.info(f"V2RayTun direct deep link generated for key {key_id}")
+            # Формируем deep link для V2RayTun
+            # Telegram не позволяет кастомные URL в кнопках, но позволяет в тексте!
+            v2raytun_deep_link = f"v2raytun://import/{connection_string}"
             
             keyboard = InlineKeyboardBuilder()
-            keyboard.button(text="📱 Подключить V2RayTun", url=v2raytun_url)
             keyboard.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
             keyboard.adjust(1)
             
-            await callback.message.edit_text(
+            logger.info(f"V2RayTun deep link generated for key {key_id}")
+            
+            # Deep link как текстовая ссылка (Telegram делает её кликабельной!)
+            text = (
                 "🚀 <b>Импорт в V2RayTun</b>\n\n"
-                "Нажмите кнопку ниже — приложение V2RayTun откроется автоматически "
-                "и конфигурация будет импортирована.\n\n"
-                "💡 <i>Убедитесь, что приложение V2RayTun установлено на вашем устройстве.</i>\n\n"
+                "📱 <b>Нажмите на ссылку ниже</b> — приложение откроется автоматически:\n\n"
+                f"<a href='{v2raytun_deep_link}'>👉 Открыть в V2RayTun</a>\n\n"
+                "━━━━━━━━━━━━━━━\n\n"
+                "📋 <b>Или вручную:</b> скопируйте конфиг (нажмите на него), "
+                "затем в V2RayTun: <b>+</b> → <b>Импорт из буфера</b>\n\n"
+                f"<code>{connection_string}</code>\n\n"
+                "━━━━━━━━━━━━━━━\n\n"
                 "📥 <b>Скачать V2RayTun:</b>\n"
                 "• <a href='https://play.google.com/store/apps/details?id=com.v2raytun.android'>Google Play</a>\n"
-                "• <a href='https://apps.apple.com/app/v2raytun/id6476628951'>App Store</a>",
+                "• <a href='https://apps.apple.com/app/v2raytun/id6476628951'>App Store</a>"
+            )
+            
+            await callback.message.edit_text(
+                text,
                 reply_markup=keyboard.as_markup(),
                 disable_web_page_preview=True
             )
