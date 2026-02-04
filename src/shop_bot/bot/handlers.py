@@ -957,27 +957,43 @@ def get_user_router() -> Router:
                 return
 
             connection_string = details['connection_string']
+            domain = get_setting("domain")
+            host_name = key_data.get('host_name', '')
             
-            # Пробуем прямой deep link в кнопке
-            v2raytun_url = f"v2raytun://import/{connection_string}"
+            keyboard = InlineKeyboardBuilder()
             
-            # Используем InlineKeyboardMarkup напрямую как в примере
-            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+            if domain:
+                # Кнопка импорта конфига
+                encoded_config = quote(connection_string, safe='')
+                config_url = f"https://{domain}/v2raytun-import?config={encoded_config}&server={quote(host_name, safe='')}"
+                keyboard.button(text="📱 Импорт конфига", url=config_url)
+                
+                # Кнопка импорта подписки (все ключи пользователя с автообновлением)
+                encryption_key = get_setting("referral_encryption_key")
+                if encryption_key:
+                    user_hash = encrypt_user_id(callback.from_user.id, encryption_key)
+                    sub_url = f"https://{domain}/sub/{user_hash}"
+                    sub_import_url = f"https://{domain}/v2raytun-import?sub={quote(sub_url, safe='')}"
+                    keyboard.button(text="🔄 Импорт подписки (авто)", url=sub_import_url)
             
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📱 Импортировать в V2RayTun", url=v2raytun_url)],
-                [InlineKeyboardButton(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")]
-            ])
+            keyboard.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
+            keyboard.adjust(1)
             
-            logger.info(f"V2RayTun direct URL for key {key_id}: {v2raytun_url[:50]}...")
+            logger.info(f"V2RayTun import prepared for key {key_id}")
             
-            text = (
-                "🚀 <b>Подключение к V2RayTun</b>\n\n"
-                "📱 Нажмите кнопку <b>«Импортировать в V2RayTun»</b> ниже.\n\n"
+            text = f"🚀 <b>Подключение к V2RayTun</b>\n\n"
+            text += f"🌍 <b>Сервер:</b> {host_name}\n\n"
+            
+            if domain:
+                text += (
+                    "📱 <b>Импорт конфига</b> — импортирует этот ключ\n"
+                    "🔄 <b>Импорт подписки</b> — импортирует все ваши ключи с автообновлением\n\n"
+                )
+            
+            text += (
                 "📋 <b>Или вручную:</b>\n"
                 "1️⃣ Нажмите на конфиг ниже чтобы скопировать\n"
-                "2️⃣ Откройте V2RayTun\n"
-                "3️⃣ Нажмите <b>＋</b> → <b>Импорт из буфера</b>\n\n"
+                "2️⃣ Откройте V2RayTun → <b>＋</b> → <b>Импорт из буфера</b>\n\n"
                 f"<code>{connection_string}</code>\n\n"
                 "📥 <b>Скачать V2RayTun:</b>\n"
                 "• <a href='https://play.google.com/store/apps/details?id=com.v2raytun.android'>Android</a>  "
@@ -986,7 +1002,7 @@ def get_user_router() -> Router:
             
             await callback.message.edit_text(
                 text,
-                reply_markup=keyboard,
+                reply_markup=keyboard.as_markup(),
                 disable_web_page_preview=True
             )
         except Exception as e:
@@ -1779,6 +1795,11 @@ async def process_successful_payment(bot: Bot, metadata: dict):
             await processing_message.edit_text("❌ Не удалось создать/обновить ключ в панели.")
             return
 
+        # Проверяем есть ли ключи на других серверах (для уведомления о смене сервера)
+        existing_keys = get_user_keys(user_id)
+        other_server_keys = [k for k in existing_keys if k.get('host_name') != host_name]
+        is_server_change = action == "new" and len(other_server_keys) > 0
+        
         if action == "new":
             key_id = add_new_key(user_id, host_name, result['client_uuid'], result['email'], result['expiry_timestamp_ms'])
         elif action == "extend":
@@ -1858,6 +1879,19 @@ async def process_successful_payment(bot: Bot, metadata: dict):
             text=final_text,
             reply_markup=keyboards.create_key_info_keyboard(key_id)
         )
+        
+        # Уведомление о смене сервера
+        if is_server_change:
+            other_servers = list(set(k.get('host_name') for k in other_server_keys))
+            server_change_text = (
+                "⚠️ <b>Внимание!</b>\n\n"
+                f"Вы создали новый ключ на сервере <b>{host_name}</b>, "
+                f"но у вас уже есть ключи на других серверах: <b>{', '.join(other_servers)}</b>.\n\n"
+                "🔄 <b>Важно:</b> Для использования нового ключа необходимо "
+                "заново импортировать конфигурацию в приложение V2RayTun.\n\n"
+                "Нажмите на новый ключ в списке → <b>«Импорт в V2RayTun»</b>"
+            )
+            await bot.send_message(chat_id=user_id, text=server_change_text)
 
         await notify_admin_of_purchase(bot, metadata)
         

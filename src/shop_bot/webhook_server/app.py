@@ -453,10 +453,94 @@ def create_webhook_app(bot_controller_instance):
     @flask_app.route('/v2raytun-import')
     def v2raytun_import_page():
         config = request.args.get('config')
-        if not config:
-            return "Missing config parameter", 400
+        sub_url = request.args.get('sub')  # URL подписки
+        server_name = request.args.get('server', '')
+        
+        if not config and not sub_url:
+            return "Missing config or sub parameter", 400
         
         bot_username = get_setting("telegram_bot_username") or ""
-        return render_template('v2raytun_import.html', config=config, bot_username=bot_username)
+        
+        if sub_url:
+            # Импорт подписки - передаём URL подписки
+            return render_template(
+                'v2raytun_import.html',
+                import_data=sub_url,
+                is_subscription=True,
+                import_type="Импорт подписки (автообновление)",
+                server_name=server_name,
+                bot_username=bot_username
+            )
+        else:
+            # Импорт конфига
+            return render_template(
+                'v2raytun_import.html',
+                import_data=config,
+                is_subscription=False,
+                import_type="Импорт конфигурации",
+                server_name=server_name,
+                bot_username=bot_username
+            )
+    
+    @flask_app.route('/sub/<user_hash>')
+    def subscription_endpoint(user_hash):
+        """Endpoint для подписки V2RayTun - возвращает конфиги пользователя"""
+        try:
+            # Расшифровываем user_id из хеша
+            encryption_key = get_setting("referral_encryption_key")
+            if not encryption_key:
+                return "Service unavailable", 503
+            
+            from shop_bot.config import decrypt_user_id
+            user_id = decrypt_user_id(user_hash, encryption_key)
+            
+            if not user_id:
+                return "Invalid subscription", 404
+            
+            # Получаем ключи пользователя
+            user_keys = get_user_keys(user_id)
+            if not user_keys:
+                return "No active keys", 404
+            
+            # Собираем все конфиги
+            configs = []
+            for key_data in user_keys:
+                try:
+                    loop = current_app.config.get('EVENT_LOOP')
+                    if loop and loop.is_running():
+                        future = asyncio.run_coroutine_threadsafe(
+                            xui_api.get_key_details_from_host(key_data), loop
+                        )
+                        details = future.result(timeout=10)
+                    else:
+                        details = asyncio.run(xui_api.get_key_details_from_host(key_data))
+                    
+                    if details and details.get('connection_string'):
+                        configs.append(details['connection_string'])
+                except Exception as e:
+                    logger.warning(f"Failed to get config for key {key_data.get('key_id')}: {e}")
+            
+            if not configs:
+                return "No valid configs", 404
+            
+            # Возвращаем конфиги в формате base64 (стандарт для подписок)
+            configs_text = "\n".join(configs)
+            configs_b64 = base64.b64encode(configs_text.encode()).decode()
+            
+            response = flask_app.response_class(
+                response=configs_b64,
+                status=200,
+                mimetype='text/plain'
+            )
+            # Добавляем заголовки для v2raytun
+            response.headers['profile-title'] = base64.b64encode("VPN Subscription".encode()).decode()
+            response.headers['subscription-userinfo'] = "upload=0; download=0; total=0; expire=0"
+            response.headers['profile-update-interval'] = "12"
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error in subscription endpoint: {e}", exc_info=True)
+            return "Error", 500
 
     return flask_app

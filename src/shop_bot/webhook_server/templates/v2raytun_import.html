@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Импорт в V2RayTun</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             display: flex;
@@ -21,7 +16,6 @@
             padding: 20px;
             color: #fff;
         }
-        
         .container {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -33,353 +27,138 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-        }
-        
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        
-        .subtitle {
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        
-        .status {
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .status.loading {
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-        }
-        
-        .status.success {
-            background: rgba(76, 175, 80, 0.2);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-        }
-        
-        .status.error {
-            background: rgba(244, 67, 54, 0.2);
-            border: 1px solid rgba(244, 67, 54, 0.3);
-        }
-        
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            margin-bottom: 12px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .btn-copy {
-            background: rgba(76, 175, 80, 0.2);
-            color: #81c784;
-            border: 1px solid rgba(76, 175, 80, 0.3);
-        }
-        
-        .btn-copy:hover {
-            background: rgba(76, 175, 80, 0.3);
-        }
-        
-        .btn-copy.copied {
-            background: rgba(76, 175, 80, 0.4);
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        .instructions {
-            text-align: left;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            font-size: 13px;
-        }
-        
-        .instructions h3 {
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .instructions ol {
-            padding-left: 20px;
-        }
-        
-        .instructions li {
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .store-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .store-btn {
-            flex: 1;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            text-decoration: none;
-            color: white;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            transition: background 0.3s ease;
-        }
-        
-        .store-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .config-preview {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 11px;
-            word-break: break-all;
-            max-height: 80px;
-            overflow-y: auto;
-            color: rgba(255, 255, 255, 0.6);
-            text-align: left;
-        }
-        
-        .divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-            margin: 20px 0;
-        }
+        .logo { width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        h1 { font-size: 24px; margin-bottom: 10px; font-weight: 600; }
+        .subtitle { color: rgba(255, 255, 255, 0.7); margin-bottom: 30px; font-size: 14px; }
+        .status { padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; }
+        .status.loading { background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); }
+        .status.success { background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.3); }
+        .status.error { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.3); }
+        .spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn { display: block; width: 100%; padding: 16px 24px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-decoration: none; margin-bottom: 12px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .btn-copy { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid rgba(76, 175, 80, 0.3); }
+        .btn-copy.copied { background: rgba(76, 175, 80, 0.4); }
+        .hidden { display: none !important; }
+        .instructions { text-align: left; margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 12px; font-size: 13px; }
+        .instructions h3 { margin-bottom: 10px; font-size: 14px; }
+        .instructions ol { padding-left: 20px; }
+        .instructions li { margin-bottom: 8px; color: rgba(255, 255, 255, 0.8); }
+        .store-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .store-btn { flex: 1; padding: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none; color: white; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .divider { height: 1px; background: rgba(255, 255, 255, 0.1); margin: 20px 0; }
+        .server-info { background: rgba(102, 126, 234, 0.15); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 10px; padding: 12px; margin-bottom: 20px; font-size: 13px; }
+        .server-info strong { color: #9fa8da; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">🚀</div>
         <h1>Импорт в V2RayTun</h1>
-        <p class="subtitle">Автоматический импорт VPN конфигурации</p>
+        <p class="subtitle">{{ import_type }}</p>
         
-        <!-- Loading State -->
+        {% if server_name %}
+        <div class="server-info">
+            <strong>Сервер:</strong> {{ server_name }}
+        </div>
+        {% endif %}
+        
         <div id="loading-state" class="status loading">
             <div class="spinner"></div>
             <p>Открываем V2RayTun...</p>
         </div>
         
-        <!-- Success State -->
         <div id="success-state" class="status success hidden">
             <p>✅ Приложение должно открыться автоматически</p>
         </div>
         
-        <!-- Manual Actions -->
         <div id="manual-actions" class="hidden">
             <div class="status error">
-                <p>Автоматическое открытие не сработало</p>
+                <p>Нажмите кнопку для открытия приложения</p>
             </div>
             
-            <a href="#" id="open-app-btn" class="btn btn-primary">
-                📱 Открыть V2RayTun
-            </a>
-            
-            <button id="copy-btn" class="btn btn-copy">
-                📋 Скопировать конфиг
-            </button>
+            <a href="#" id="open-app-btn" class="btn btn-primary">📱 Открыть V2RayTun</a>
+            <button id="copy-btn" class="btn btn-copy">📋 Скопировать</button>
             
             <div class="divider"></div>
             
             <div class="instructions">
                 <h3>📖 Ручной импорт:</h3>
                 <ol>
-                    <li>Нажмите "Скопировать конфиг"</li>
-                    <li>Откройте приложение V2RayTun</li>
-                    <li>Нажмите "+" → "Импорт из буфера"</li>
+                    <li>Нажмите "Скопировать"</li>
+                    <li>Откройте V2RayTun</li>
+                    <li><b>+</b> → <b>Импорт из буфера</b></li>
                 </ol>
-                
                 <div class="store-buttons">
-                    <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android" 
-                       target="_blank" class="store-btn">
-                        🤖 Google Play
-                    </a>
-                    <a href="https://apps.apple.com/app/v2raytun/id6476628951" 
-                       target="_blank" class="store-btn">
-                        🍎 App Store
-                    </a>
+                    <a href="https://play.google.com/store/apps/details?id=com.v2raytun.android" target="_blank" class="store-btn">🤖 Google Play</a>
+                    <a href="https://apps.apple.com/app/v2raytun/id6476628951" target="_blank" class="store-btn">🍎 App Store</a>
                 </div>
             </div>
-            
-            <div class="config-preview" id="config-preview"></div>
         </div>
         
         <div class="divider"></div>
-        
-        <a href="https://t.me/{{ bot_username }}" class="btn btn-secondary">
-            ← Вернуться в бот
-        </a>
+        <a href="https://t.me/{{ bot_username }}" class="btn btn-secondary">← Вернуться в бот</a>
     </div>
 
     <script>
-        const config = "{{ config | safe }}";
-        const deepLink = "v2raytun://import/" + encodeURIComponent(config);
+        const importData = "{{ import_data | safe }}";
+        const isSubscription = {{ 'true' if is_subscription else 'false' }};
         
-        // Truncate config for preview
-        const configPreview = document.getElementById('config-preview');
-        if (config.length > 100) {
-            configPreview.textContent = config.substring(0, 100) + '...';
-        } else {
-            configPreview.textContent = config;
-        }
+        // Для подписки передаём URL, для конфига - сам конфиг
+        const deepLink = isSubscription 
+            ? "v2raytun://import/" + importData
+            : "v2raytun://import/" + importData;
         
-        // Set the manual open button href
         document.getElementById('open-app-btn').href = deepLink;
         
-        // Copy functionality
         document.getElementById('copy-btn').addEventListener('click', async function() {
             try {
-                await navigator.clipboard.writeText(config);
+                await navigator.clipboard.writeText(importData);
                 this.textContent = '✅ Скопировано!';
                 this.classList.add('copied');
-                setTimeout(() => {
-                    this.textContent = '📋 Скопировать конфиг';
-                    this.classList.remove('copied');
-                }, 2000);
+                setTimeout(() => { this.textContent = '📋 Скопировать'; this.classList.remove('copied'); }, 2000);
             } catch (err) {
-                // Fallback for older browsers
-                const textarea = document.createElement('textarea');
-                textarea.value = config;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    this.textContent = '✅ Скопировано!';
-                    this.classList.add('copied');
-                    setTimeout(() => {
-                        this.textContent = '📋 Скопировать конфиг';
-                        this.classList.remove('copied');
-                    }, 2000);
-                } catch (e) {
-                    alert('Не удалось скопировать. Пожалуйста, скопируйте вручную.');
-                }
-                document.body.removeChild(textarea);
+                const ta = document.createElement('textarea');
+                ta.value = importData;
+                ta.style.cssText = 'position:fixed;opacity:0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                this.textContent = '✅ Скопировано!';
+                this.classList.add('copied');
+                setTimeout(() => { this.textContent = '📋 Скопировать'; this.classList.remove('copied'); }, 2000);
             }
         });
         
-        // Try to open the app
-        function tryOpenApp() {
-            const loadingState = document.getElementById('loading-state');
-            const successState = document.getElementById('success-state');
-            const manualActions = document.getElementById('manual-actions');
+        (function tryOpenApp() {
+            const loading = document.getElementById('loading-state');
+            const success = document.getElementById('success-state');
+            const manual = document.getElementById('manual-actions');
             
-            // Method 1: Try using an iframe (works on many platforms)
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             iframe.src = deepLink;
             document.body.appendChild(iframe);
             
-            // Method 2: Also try window.location as backup
+            setTimeout(() => { window.location.href = deepLink; }, 100);
+            
+            let opened = false;
+            const check = () => { if (document.hidden) opened = true; };
+            document.addEventListener('visibilitychange', check);
+            window.addEventListener('blur', () => { opened = true; });
+            
             setTimeout(() => {
-                window.location.href = deepLink;
-            }, 100);
-            
-            // Check if app opened (if we're still here after timeout, it didn't work)
-            let appOpened = false;
-            
-            // If user comes back to page (blur/focus), app probably opened
-            const handleVisibilityChange = () => {
-                if (document.hidden) {
-                    appOpened = true;
-                }
-            };
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-            
-            window.addEventListener('blur', () => {
-                appOpened = true;
-            });
-            
-            // After 2.5 seconds, check if app opened
-            setTimeout(() => {
-                loadingState.classList.add('hidden');
-                
-                if (appOpened) {
-                    successState.classList.remove('hidden');
-                } else {
-                    // Show manual options
-                    manualActions.classList.remove('hidden');
-                }
-                
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-                
-                // Clean up iframe
-                if (iframe.parentNode) {
-                    document.body.removeChild(iframe);
-                }
+                loading.classList.add('hidden');
+                if (opened) success.classList.remove('hidden');
+                else manual.classList.remove('hidden');
+                document.removeEventListener('visibilitychange', check);
+                if (iframe.parentNode) document.body.removeChild(iframe);
             }, 2500);
-        }
-        
-        // Start trying to open the app
-        tryOpenApp();
+        })();
     </script>
 </body>
 </html>
