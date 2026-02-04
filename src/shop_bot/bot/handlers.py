@@ -956,32 +956,29 @@ def get_user_router() -> Router:
                 )
                 return
 
-            domain = get_setting("domain")
-            if not domain:
-                await callback.message.edit_text(
-                    "❌ Домен не настроен. Обратитесь к администратору.",
-                    reply_markup=keyboards.create_back_to_key_keyboard(key_id)
-                )
-                return
-
             connection_string = details['connection_string']
-            # URL-encode the config for safe transmission in URL parameter
-            encoded_config = quote(connection_string, safe='')
-            import_url = f"https://{domain}/v2raytun-import?config={encoded_config}"
             
-            logger.info(f"V2RayTun import URL generated for key {key_id}")
+            # Формируем direct deep link для V2RayTun
+            # Формат: v2raytun://import/{configuration}
+            v2raytun_url = f"v2raytun://import/{connection_string}"
+            
+            logger.info(f"V2RayTun direct deep link generated for key {key_id}")
             
             keyboard = InlineKeyboardBuilder()
-            keyboard.button(text="📱 Открыть и импортировать", url=import_url)
+            keyboard.button(text="📱 Подключить V2RayTun", url=v2raytun_url)
             keyboard.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
             keyboard.adjust(1)
             
             await callback.message.edit_text(
                 "🚀 <b>Импорт в V2RayTun</b>\n\n"
-                "Нажмите кнопку ниже, чтобы открыть страницу импорта.\n"
-                "Конфигурация будет автоматически импортирована в приложение V2RayTun.\n\n"
-                "💡 <i>Убедитесь, что приложение V2RayTun установлено на вашем устройстве.</i>",
-                reply_markup=keyboard.as_markup()
+                "Нажмите кнопку ниже — приложение V2RayTun откроется автоматически "
+                "и конфигурация будет импортирована.\n\n"
+                "💡 <i>Убедитесь, что приложение V2RayTun установлено на вашем устройстве.</i>\n\n"
+                "📥 <b>Скачать V2RayTun:</b>\n"
+                "• <a href='https://play.google.com/store/apps/details?id=com.v2raytun.android'>Google Play</a>\n"
+                "• <a href='https://apps.apple.com/app/v2raytun/id6476628951'>App Store</a>",
+                reply_markup=keyboard.as_markup(),
+                disable_web_page_preview=True
             )
         except Exception as e:
             logger.error(f"Error preparing V2RayTun import for key {key_id}: {e}", exc_info=True)
