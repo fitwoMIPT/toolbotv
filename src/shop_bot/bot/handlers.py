@@ -961,20 +961,24 @@ def get_user_router() -> Router:
             host_name = key_data.get('host_name', '')
             
             keyboard = InlineKeyboardBuilder()
+            import_button_added = False
             
             if domain:
-                # Кнопка импорта конфига
-                encoded_config = quote(connection_string, safe='')
-                config_url = f"https://{domain}/v2raytun-import?config={encoded_config}&server={quote(host_name, safe='')}"
-                keyboard.button(text="📱 Импорт конфига", url=config_url)
-                
-                # Кнопка импорта подписки (все ключи пользователя с автообновлением)
                 encryption_key = get_setting("referral_encryption_key")
+                
+                # Приоритет на подписку - импортирует все ключи с автообновлением
                 if encryption_key:
                     user_hash = encrypt_user_id(callback.from_user.id, encryption_key)
                     sub_url = f"https://{domain}/sub/{user_hash}"
                     sub_import_url = f"https://{domain}/v2raytun-import?sub={quote(sub_url, safe='')}"
-                    keyboard.button(text="🔄 Импорт подписки (авто)", url=sub_import_url)
+                    keyboard.button(text="📱 Импортировать в V2RayTun", url=sub_import_url)
+                    import_button_added = True
+                else:
+                    # Если нет ключа шифрования - импортируем только этот конфиг
+                    encoded_config = quote(connection_string, safe='')
+                    config_url = f"https://{domain}/v2raytun-import?config={encoded_config}&server={quote(host_name, safe='')}"
+                    keyboard.button(text="📱 Импортировать в V2RayTun", url=config_url)
+                    import_button_added = True
             
             keyboard.button(text="⬅️ Назад к ключу", callback_data=f"show_key_{key_id}")
             keyboard.adjust(1)
@@ -984,11 +988,15 @@ def get_user_router() -> Router:
             text = f"🚀 <b>Подключение к V2RayTun</b>\n\n"
             text += f"🌍 <b>Сервер:</b> {host_name}\n\n"
             
-            if domain:
-                text += (
-                    "📱 <b>Импорт конфига</b> — импортирует этот ключ\n"
-                    "🔄 <b>Импорт подписки</b> — импортирует все ваши ключи с автообновлением\n\n"
-                )
+            if import_button_added:
+                encryption_key = get_setting("referral_encryption_key")
+                if encryption_key:
+                    text += (
+                        "📱 Нажмите кнопку <b>«Импортировать в V2RayTun»</b> — "
+                        "добавятся все ваши ключи с автоматическим обновлением.\n\n"
+                    )
+                else:
+                    text += "📱 Нажмите кнопку для импорта этого ключа.\n\n"
             
             text += (
                 "📋 <b>Или вручную:</b>\n"
