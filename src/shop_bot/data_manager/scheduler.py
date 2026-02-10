@@ -173,9 +173,9 @@ async def sync_keys_with_panels():
                         total_affected_records += 1
                         logger.info(f"Scheduler: Synced (updated) key '{key_email}' for host '{host_name}'.")
                 else:
-                    logger.warning(f"Scheduler: Key '{key_email}' for host '{host_name}' not found on server. Deleting from local DB.")
-                    database.update_key_status_from_server(key_email, None)
-                    total_affected_records += 1
+                    # Ключ есть в БД, но не найден на панели — логируем, но НЕ удаляем.
+                    # Это позволяет вручную добавлять ключи в БД без удаления планировщиком.
+                    logger.warning(f"Scheduler: Key '{key_email}' for host '{host_name}' not found on server panel. Keeping in DB (may be manually added).")
 
             if clients_on_server:
                 for orphan_email in clients_on_server.keys():

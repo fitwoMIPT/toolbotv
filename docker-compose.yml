@@ -9,3 +9,8 @@ services:
       - /app/.venv
     environment:
       - SECRET_KEY=QB8RCf]yejc-LCZ8miN?g]$x+@+g1H
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
