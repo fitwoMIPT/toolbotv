@@ -1,11 +1,22 @@
 import logging
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware, Bot
-from aiogram.types import TelegramObject, Message, CallbackQuery, Chat
+from aiogram.types import TelegramObject, Message, CallbackQuery, Update
 from aiogram.enums import ChatMemberStatus
 from shop_bot.data_manager.database import get_user, get_setting
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_event(event: TelegramObject):
+    """Извлекает Message или CallbackQuery из Update (dp.update middleware получает Update, а не Message/CallbackQuery)."""
+    if isinstance(event, Update):
+        if event.callback_query:
+            return event.callback_query
+        if event.message:
+            return event.message
+    return event
+
 
 class BanMiddleware(BaseMiddleware):
     async def __call__(
@@ -21,10 +32,11 @@ class BanMiddleware(BaseMiddleware):
         user_data = get_user(user.id)
         if user_data and user_data.get('is_banned'):
             ban_message_text = "Вы заблокированы и не можете использовать этого бота."
-            if isinstance(event, CallbackQuery):
-                await event.answer(ban_message_text, show_alert=True)
-            elif isinstance(event, Message):
-                await event.answer(ban_message_text)
+            inner = _extract_event(event)
+            if isinstance(inner, CallbackQuery):
+                await inner.answer(ban_message_text, show_alert=True)
+            elif isinstance(inner, Message):
+                await inner.answer(ban_message_text)
             return
         
         return await handler(event, data)
@@ -43,10 +55,12 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
         if not user:
             return await handler(event, data)
         
+        inner = _extract_event(event)
+        
         # Пропускаем проверку для команды /start и онбординга
-        if isinstance(event, Message) and event.text and event.text.startswith('/start'):
+        if isinstance(inner, Message) and inner.text and inner.text.startswith('/start'):
             return await handler(event, data)
-        if isinstance(event, CallbackQuery) and event.data == "check_subscription_and_agree":
+        if isinstance(inner, CallbackQuery) and inner.data == "check_subscription_and_agree":
             return await handler(event, data)
         
         is_subscription_forced = get_setting("force_subscription") == "true"
@@ -81,10 +95,10 @@ class SubscriptionCheckMiddleware(BaseMiddleware):
                     f"📢 Подпишитесь: {channel_url}\n\n"
                     "После подписки попробуйте снова."
                 )
-                if isinstance(event, CallbackQuery):
-                    await event.answer(unsub_text, show_alert=True)
-                elif isinstance(event, Message):
-                    await event.answer(unsub_text)
+                if isinstance(inner, CallbackQuery):
+                    await inner.answer(unsub_text, show_alert=True)
+                elif isinstance(inner, Message):
+                    await inner.answer(unsub_text)
                 return
                 
         except Exception as e:
