@@ -282,18 +282,30 @@ def create_webhook_app(bot_controller_instance):
     def yookassa_webhook_handler():
         try:
             event_json = request.json
+            logger.info(f"YooKassa webhook received: event={event_json.get('event')}")
+            
             if event_json.get("event") == "payment.succeeded":
                 metadata = event_json.get("object", {}).get("metadata", {})
+                logger.info(f"YooKassa payment succeeded. Metadata: user_id={metadata.get('user_id')}, action={metadata.get('action')}, host={metadata.get('host_name')}")
                 
                 bot = _bot_controller.get_bot_instance()
                 payment_processor = handlers.process_successful_payment
 
-                if metadata and bot is not None and payment_processor is not None:
+                if not metadata:
+                    logger.error("YooKassa webhook: metadata is empty!")
+                elif bot is None:
+                    logger.error("YooKassa webhook: bot instance is None! Is the bot running?")
+                elif payment_processor is None:
+                    logger.error("YooKassa webhook: payment_processor is None!")
+                else:
                     loop = current_app.config.get('EVENT_LOOP')
                     if loop and loop.is_running():
-                        asyncio.run_coroutine_threadsafe(payment_processor(bot, metadata), loop)
+                        future = asyncio.run_coroutine_threadsafe(payment_processor(bot, metadata), loop)
+                        logger.info(f"YooKassa webhook: payment processing task submitted to event loop")
                     else:
-                        logger.error("YooKassa webhook: Event loop is not available!")
+                        logger.error(f"YooKassa webhook: Event loop is not available! loop={loop}, running={loop.is_running() if loop else 'N/A'}")
+            else:
+                logger.info(f"YooKassa webhook: ignoring event type '{event_json.get('event')}'")
             return 'OK', 200
         except Exception as e:
             logger.error(f"Error in yookassa webhook handler: {e}", exc_info=True)

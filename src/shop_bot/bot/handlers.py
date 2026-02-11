@@ -1752,6 +1752,7 @@ async def get_ton_usdt_rate() -> Decimal | None:
         return None
 
 async def process_successful_payment(bot: Bot, metadata: dict):
+    logger.info(f"process_successful_payment called with metadata: {metadata}")
     try:
         user_id = int(metadata['user_id'])
         months = int(metadata['months'])
@@ -1766,7 +1767,8 @@ async def process_successful_payment(bot: Bot, metadata: dict):
         chat_id_to_delete = metadata.get('chat_id')
         message_id_to_delete = metadata.get('message_id')
         
-    except (ValueError, TypeError) as e:
+        logger.info(f"Payment parsed: user={user_id}, action={action}, host={host_name}, months={months}")
+    except (ValueError, TypeError, KeyError) as e:
         logger.error(f"FATAL: Could not parse metadata. Error: {e}. Metadata: {metadata}")
         return
 
